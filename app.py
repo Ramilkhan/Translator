@@ -4,9 +4,8 @@ import requests
 import uuid
 import base64
 from io import BytesIO
-import tempfile
 from docx import Document
-from pydub import AudioSegment
+import pdfplumber
 
 # -------------------------------
 #  CONFIG
@@ -62,7 +61,9 @@ def translate_text(text, to_lang):
     response = requests.post(url, headers=headers, json=body)
     return response.json()[0]["translations"][0]["text"]
 
+
 def text_to_speech(text, lang):
+
     voice_map = {
         "en": "en-US-AriaNeural",
         "ur": "ur-PK-AsadNeural",
@@ -92,7 +93,9 @@ def text_to_speech(text, lang):
     audio_base64 = base64.b64encode(audio_response.content).decode("utf-8")
     return audio_base64
 
+
 def speech_to_text(audio_bytes, lang):
+
     stt_endpoint = f"https://{region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1"
     stt_headers = {
         "Ocp-Apim-Subscription-Key": key,
@@ -103,6 +106,7 @@ def speech_to_text(audio_bytes, lang):
     response = requests.post(stt_endpoint, headers=stt_headers, params=params, data=audio_bytes)
     result = response.json()
     return result.get("DisplayText", "")
+
 
 def translate_file(uploaded, lang):
     ext = uploaded.name.lower()
@@ -117,7 +121,6 @@ def translate_file(uploaded, lang):
         return translate_text(full_text, lang)
 
     if ext.endswith(".pdf"):
-        import pdfplumber
         with pdfplumber.open(uploaded) as pdf:
             text = "\n".join([page.extract_text() or "" for page in pdf.pages])
         return translate_text(text, lang)
@@ -148,7 +151,6 @@ with tab1:
         st.success("Translation:")
         st.write(translated)
 
-        # TTS
         audio64 = text_to_speech(translated, to_lang_code)
         st.audio(base64.b64decode(audio64), format="audio/wav")
 
